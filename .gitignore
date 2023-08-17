@@ -1,0 +1,8 @@
+*
+
+!config
+!config/*.river
+!.env.example
+!.gitignore
+!docker-compose.yaml
+!README.md

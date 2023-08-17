@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  grafana-agent:
+    image: grafana/agent:v0.35.4
+    command: run /etc/agent/config.river
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    cap_add:
+      - SYS_TIME
+    environment:
+      AGENT_MODE: flow
+      PROM_URL: $PROM_URL
+      PROM_USER: $PROM_USER
+      PROM_PASSWORD: $PROM_PASSWORD
+      INSTANCE_NAME: $INSTANCE_NAME
+      SNMP_AUTH: $SNMP_AUTH
+    volumes:
+      - wal_data:/etc/agent/data
+      - ./config/agent-config.river:/etc/agent/config.river
+      - /:/host/root:ro,rslave
+      - /sys:/host/sys:ro,rslave
+      - /proc:/host/proc:ro,rslave
+
+volumes:
+  wal_data:

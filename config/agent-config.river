@@ -1,0 +1,74 @@
+logging {
+  // level  = "debug"
+  format = "logfmt"
+}
+
+prometheus.remote_write "grafana_cloud" {
+  endpoint {
+    url = env("PROM_URL")
+
+    basic_auth {
+      username = env("PROM_USER")
+      password = env("PROM_PASSWORD")
+    }
+  }
+}
+
+prometheus.exporter.snmp "home" {
+    target "synology" {
+        address     = "127.0.0.1"
+        module      = "synology"
+        auth        = coalesce(env("SNMP_AUTH"), "public_v2")
+    }
+}
+
+prometheus.relabel "job_instance" {
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+
+  rule {
+    source_labels = ["job"]
+    target_label  = "original_job"
+  }
+
+  rule {
+    action        = "replace"
+    source_labels = ["original_job"]
+    regex         = "(^.*snmp|unix)\\/(.*)"
+    target_label  = "job"
+    replacement   = "$1"
+  }
+
+  rule {
+    action        = "replace"
+    source_labels = ["original_job"]
+    regex         = "(.*)"
+    target_label  = "instance"
+    replacement   = env("INSTANCE_NAME")
+  }
+
+  rule {
+    action  = "labeldrop"
+    regex   = "original_job"
+  }
+}
+
+prometheus.scrape "snmp_exporter" {
+    targets    = prometheus.exporter.snmp.home.targets
+    forward_to = [ prometheus.relabel.job_instance.receiver ]
+}
+
+
+prometheus.exporter.unix {
+  rootfs_path           = "/host/root"
+  sysfs_path            = "/host/sys"
+  procfs_path           = "/host/proc"
+  
+  filesystem {
+    mount_points_exclude  = "^/(rootfs/)?(dev|etc|host|proc|run|sys|volume1)($$|/)"
+  }
+}
+
+prometheus.scrape "node_exporter" {
+  targets    = prometheus.exporter.unix.targets
+  forward_to = [ prometheus.relabel.job_instance.receiver ]
+}
