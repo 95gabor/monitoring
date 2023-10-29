@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   grafana-agent:
-    image: grafana/agent:v0.35.4
+    image: grafana/agent:v0.37.3
     command: run /etc/agent/config.river
     restart: unless-stopped
     network_mode: host

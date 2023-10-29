@@ -12,53 +12,13 @@ prometheus.remote_write "grafana_cloud" {
       password = env("PROM_PASSWORD")
     }
   }
-}
 
-prometheus.exporter.snmp "home" {
-    target "synology" {
-        address     = "127.0.0.1"
-        module      = "synology"
-        auth        = coalesce(env("SNMP_AUTH"), "public_v2")
-    }
-}
-
-prometheus.relabel "job_instance" {
-  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
-
-  rule {
-    source_labels = ["job"]
-    target_label  = "original_job"
-  }
-
-  rule {
-    action        = "replace"
-    source_labels = ["original_job"]
-    regex         = "(^.*snmp|unix)\\/(.*)"
-    target_label  = "job"
-    replacement   = "$1"
-  }
-
-  rule {
-    action        = "replace"
-    source_labels = ["original_job"]
-    regex         = "(.*)"
-    target_label  = "instance"
-    replacement   = env("INSTANCE_NAME")
-  }
-
-  rule {
-    action  = "labeldrop"
-    regex   = "original_job"
+  external_labels = {
+    "domain" = env("INSTANCE_NAME"),
   }
 }
 
-prometheus.scrape "snmp_exporter" {
-    targets    = prometheus.exporter.snmp.home.targets
-    forward_to = [ prometheus.relabel.job_instance.receiver ]
-}
-
-
-prometheus.exporter.unix {
+prometheus.exporter.unix "nas" {
   rootfs_path           = "/host/root"
   sysfs_path            = "/host/sys"
   procfs_path           = "/host/proc"
@@ -69,6 +29,13 @@ prometheus.exporter.unix {
 }
 
 prometheus.scrape "node_exporter" {
-  targets    = prometheus.exporter.unix.targets
-  forward_to = [ prometheus.relabel.job_instance.receiver ]
+  targets    = prometheus.exporter.unix.nas.targets
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+}
+
+prometheus.scrape "router" {
+  targets = [
+    { "__address__" = "192.168.1.1:9100", "instance" = "router" },
+  ]
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
 }
