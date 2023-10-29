@@ -39,3 +39,10 @@ prometheus.scrape "router" {
   ]
   forward_to = [prometheus.remote_write.grafana_cloud.receiver]
 }
+
+prometheus.scrape "unifi" {
+  targets = [
+    { "__address__" = "127.0.0.1:9130", "instance" = "unifi" },
+  ]
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+}
