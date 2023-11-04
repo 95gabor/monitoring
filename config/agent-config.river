@@ -46,3 +46,34 @@ prometheus.scrape "unifi" {
   ]
   forward_to = [prometheus.remote_write.grafana_cloud.receiver]
 }
+
+loki.write "remote" {
+  endpoint {
+      url = env("LOKI_URL")
+  }
+
+  external_labels = {
+    "domain" = env("INSTANCE_NAME"),
+  }
+}
+
+local.file_match "logs" {
+  path_targets = [
+    {__path__ = "/host/root/var/log/*.log"},
+  ]
+}
+
+loki.source.file "var_logs" {
+  targets    = local.file_match.logs.targets
+  forward_to = [loki.write.remote.receiver]
+}
+
+// discovery.docker "linux" {
+//   host = "unix:///host/root/var/run/docker.sock"
+// }
+
+// loki.source.docker "default" {
+//   host       = "unix:///host/root/var/run/docker.sock"
+//   targets    = discovery.docker.linux.targets 
+//   forward_to = [loki.write.remote.receiver]
+// }

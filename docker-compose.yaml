@@ -13,6 +13,7 @@ services:
       PROM_URL: $PROM_URL
       PROM_USER: $PROM_USER
       PROM_PASSWORD: $PROM_PASSWORD
+      LOKI_URL: $LOKI_URL
       INSTANCE_NAME: $INSTANCE_NAME
       SNMP_AUTH: $SNMP_AUTH
     volumes:
