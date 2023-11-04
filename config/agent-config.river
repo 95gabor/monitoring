@@ -33,6 +33,20 @@ prometheus.scrape "node_exporter" {
   forward_to = [prometheus.remote_write.grafana_cloud.receiver]
 }
 
+prometheus.exporter.process "nas" {
+  procfs_path = "/host/proc"
+
+  matcher {
+    name = "{{.Comm}}"
+    cmdline = [".+"]
+  }
+}
+
+prometheus.scrape "process" {
+  targets    = prometheus.exporter.process.nas.targets
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+}
+
 prometheus.scrape "router" {
   targets = [
     { "__address__" = "192.168.1.1:9100", "instance" = "router" },
