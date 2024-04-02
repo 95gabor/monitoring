@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   grafana-agent:
-    image: grafana/agent:v0.37.3
+    image: grafana/agent
     command: run /etc/agent/config.river
     restart: unless-stopped
     network_mode: host
@@ -16,6 +16,7 @@ services:
       LOKI_URL: $LOKI_URL
       INSTANCE_NAME: $INSTANCE_NAME
       SNMP_AUTH: $SNMP_AUTH
+      WATCHTOWER_HTTP_API_TOKEN: $WATCHTOWER_HTTP_API_TOKEN
     volumes:
       - wal_data:/etc/agent/data
       - ./config/agent-config.river:/etc/agent/config.river
